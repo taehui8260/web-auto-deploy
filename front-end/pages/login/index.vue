@@ -11,6 +11,9 @@ export default{
             const token = await this.$axios.get("/api/login")
             console.log("### token", token)
             console.log("### token", token)
+            console.log("### token", token)
+            console.log("### token", token)
+            console.log("### token", token)
         }
     }
 }
