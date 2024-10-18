@@ -1,6 +1,6 @@
 # front-end
 
-> My phenomenal Nuxt.js project
+> 
 
 ## Build Setup
 
@@ -15,7 +15,7 @@ $ npm run dev
 $ npm run build
 $ npm run start
 
-# generate static project asdfasdf
+# generate static project
 $ npm run generate
 ```
 
