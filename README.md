@@ -36,6 +36,11 @@ Spring Boot(백엔드), Nuxt.js(프론트엔드)로 개발한 웹 소스를 사�
 각 소프트웨어 및 도구의 공식 웹사이트나 관련 문서를 참조하여 설치해 주세요. 아래는 일부 도구의 설치 예시입니다:
 
 ```
+
+# Nuxt 설치(설치 후 .git 파일 삭제 필요)
+npx create-nuxt-app@2 front-end
+git rm -r --cached front-end/
+
 # Docker 설치 예시 (Ubuntu 기준)
 sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io
