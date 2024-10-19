@@ -37,9 +37,8 @@ Spring Boot(백엔드), Nuxt.js(프론트엔드)로 개발한 웹 소스를 사�
 
 ```
 
-# Nuxt 설치(설치 후 .git 파일 삭제 필요)
+# Nuxt 설치(설치 후 .git 파일 삭제 필요. 삭제 후 File | Settings | Version Control | Directory Mappings 초기화 필요)
 npx create-nuxt-app@2 front-end
-git rm -r --cached front-end/
 
 # Docker 설치 예시 (Ubuntu 기준)
 sudo apt-get update
