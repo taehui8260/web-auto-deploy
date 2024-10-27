@@ -1,0 +1,121 @@
+node {
+
+    def MAVEN_HOME
+    def JAVA_HOME
+    def CURRENT_DATE
+
+    stage('Preparation') {
+        MAVEN_HOME = tool 'MAVEN_3.9.4'
+        JAVA_HOME = tool name: 'OpenJDK11', type: 'hudson.model.JDK'
+        env.JAVA_HOME = "${JAVA_HOME}"
+        env.PATH = "${env.PATH}:${env.JAVA_HOME}/bin"
+        CURRENT_DATE = sh(returnStdout: true, script: 'date +%Y%m%d%H%M').trim()
+    }
+
+    stage('Checkout') {
+        git branch: 'dev', credentialsId: 'jenkins', url: 'http://10.20.106.6:38080/web/k-sight.git'
+    }
+
+    stage('Build') {
+        sh "${MAVEN_HOME}/bin/mvn -f pom.xml clean package -P external pmd:pmd pmd:cpd"
+    }
+
+    stage('Analysis') {
+        def pmd = scanForIssues tool: [$class: 'Pmd'], pattern: 'ksight-external/target/pmd.xml'
+        publishIssues issues:[pmd]
+    }
+
+    def pom = readMavenPom file: 'pom.xml'
+    def ARTIFACT_ID = pom.artifactId
+    def VERSION = pom.version
+    def BUILD_FILE_NAME = "${ARTIFACT_ID}-${VERSION}.jar"
+
+    stage('Deploy') {
+        sh """
+        if [ -d /data/K-SIGHT-DEV/deploy/external ]; then
+          rm -rf /data/K-SIGHT-DEV/deploy/external
+        fi
+        """
+        sh "mkdir -m 777 -p /data/K-SIGHT-DEV/deploy/external"
+        sh "mkdir -m 777 -p /data/K-SIGHT-DEV/deploy/external/api"
+
+        sh "cp ./ksight-external/target/${BUILD_FILE_NAME} /data/K-SIGHT-DEV/deploy/external/api"
+        sh "cp -r ./ksight-external/front-end /data/K-SIGHT-DEV/deploy/external"
+        sh "cp -r ./ksight-external/docker-dev/web /data/K-SIGHT-DEV/deploy/external"
+
+        sh "mv /data/K-SIGHT-DEV/deploy/external/front-end /data/K-SIGHT-DEV/deploy/external/app"
+
+        sh "cp ./ksight-external/docker-dev/api/Dockerfile /data/K-SIGHT-DEV/deploy/external/api"
+        sh "cp ./ksight-external/docker-dev/app/Dockerfile /data/K-SIGHT-DEV/deploy/external/app"
+    }
+
+    def DOCKER_REGISTRY = '10.20.106.6:5000'
+    def DOCKER_GROUP = '10.20.106.6:5001'
+
+    def API_CONTAINER_NAME = 'ksight-external-api-dev'
+    def APP_CONTAINER_NAME = 'ksight-external-app-dev'
+    def WEB_CONTAINER_NAME = 'ksight-external-web-dev'
+
+    stage('Docker Build/Push') {
+        withCredentials([string(credentialsId: 'CPICI_SECRET', variable: 'CPICI_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET')]) {
+            def remote = [:]
+            remote.name = 'cpici'
+            remote.host = '10.20.106.6'
+            remote.port = 20022
+            remote.user = 'ncloud'
+            remote.password = CPICI_SECRET
+            remote.allowAnyHosts = true
+            sshCommand remote: remote, command: """
+            sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_GROUP}
+            cd /data/K-SIGHT-DEV/deploy/external/api
+            sudo docker build -t ${API_CONTAINER_NAME} .
+            cd /data/K-SIGHT-DEV/deploy/external/app
+            sudo docker build -t ${APP_CONTAINER_NAME} .
+            cd /data/K-SIGHT-DEV/deploy/external/web
+            sudo docker build -t ${WEB_CONTAINER_NAME} .
+            sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_REGISTRY}
+            sudo docker tag ${API_CONTAINER_NAME} ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${APP_CONTAINER_NAME} ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${WEB_CONTAINER_NAME} ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker push ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker push ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker push ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            """, failOnError: true
+        }
+    }
+
+    stage('Docker Pull/Run') {
+        withCredentials([string(credentialsId: 'CDIWEB_SECRET', variable: 'CDIWEB_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET')]) {
+            def remote = [:]
+            remote.name = 'cpiewas1'
+            remote.host = '10.20.200.6'
+            remote.port = 20022
+            remote.user = 'ncloud'
+            remote.password = CDIWEB_SECRET
+            remote.allowAnyHosts = true
+            sshCommand remote: remote, command: """
+            sudo docker rmi \$(docker images -f "dangling=true" -q)
+            sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_REGISTRY}
+            sudo docker pull ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker pull ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker pull ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE} ${API_CONTAINER_NAME}:latest
+            sudo docker tag ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE} ${APP_CONTAINER_NAME}:latest
+            sudo docker tag ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE} ${WEB_CONTAINER_NAME}:latest
+            sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker rm --force ${API_CONTAINER_NAME}
+            sudo docker rm --force ${APP_CONTAINER_NAME}
+            sudo docker rm --force ${WEB_CONTAINER_NAME}
+            sudo docker run --rm -d -p 18081:8080 -v /data/K-SIGHT-DEV/files:/data/K-SIGHT/files -v /applog/K-SIGHT/external/api:/DATA/data-portal/logs -e TZ=Asia/Seoul -e SSO_ENGINE_IP=10.20.200.6 --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
+            sudo docker run --rm -d -p 14000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
+            sudo docker run --rm -d -p 18080:80 -p 18443:443 -v/data/K-SIGHT-DEV/web/external/nginx/html:/etc/nginx/html -v /applog/K-SIGHT/external/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
+            """, failOnError: true
+        }
+
+    }
+}

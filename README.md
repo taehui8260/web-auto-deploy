@@ -22,7 +22,6 @@ Spring Boot(백엔드), Nuxt.js(프론트엔드)로 개발한 웹 소스를 사�
 - **Spring Boot:** 버전 2.7
 - **Nginx:** `1.22.1-alpine` - 프로젝트의 리버스 프록시 및 정적 파일 서버로 사용됩니다.
 - **Docker:** 버전 `20.10.7` - 컨테이너화된 환경에서 애플리케이션 및 서비스를 실행하기 위해 필요합니다.
-- **docker-compose:** 버전 `1.29.2` - 다중 컨테이너 Docker 애플리케이션을 정의하고 실행하기 위해 필요합니다.
 
 ### Docker 컨테이너 버전
 
@@ -74,10 +73,7 @@ su - ${USER}
 프로젝트의 주요 디렉토리와 파일에 대한 간략한 설명을 포함합니다.
 
 - `docker/`: Docker 관련 파일이 있는 디렉토리
-    - `Dockerfile`: Docker 이미지 구성 파일
-    - `docker-compose.yml`: Docker 컨테이너 오케스트레이션 파일
 - `jenkins/`: Jenkins 설정 파일이 있는 디렉토리
-    - `Jenkinsfile`: Jenkins 파이프라인 정의 파일
 - `nexus/`: Nexus 관련 설정 파일이 있는 디렉토리 (필요한 경우)
 - `src/`: 애플리케이션 백엔드 소스 코드가 있는 
 - `front-end/`: 애플리케이션 프론트엔드 소스 코드가 있는 디렉토리
