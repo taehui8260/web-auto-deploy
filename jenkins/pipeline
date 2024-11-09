@@ -10,13 +10,11 @@ node {
         env.JAVA_HOME = "${JAVA_HOME}"
         env.PATH = "${env.PATH}:${env.JAVA_HOME}/bin"
         CURRENT_DATE = sh(returnStdout: true, script: 'date +%Y%m%d%H%M').trim()
-        GIT_HOST =
-        GIT_PORT =
-
+        GIT_HOST = "https://github.com/taehui8260/web-auto-deploy.git"
     }
 
     stage('Checkout') {
-        git branch: 'dev', credentialsId: 'jenkins', url: 'http://10.20.106.6:38080/web/k-sight.git'
+        git branch: 'main', credentialsId: 'GITHUB_ACCESS_TOKEN', url: "${GIT_HOST}"
     }
 
     stage('Build') {

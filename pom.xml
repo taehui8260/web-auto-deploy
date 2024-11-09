@@ -52,6 +52,28 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-pmd-plugin</artifactId>
+				<version>3.15.0</version> <!-- 사용하려는 버전에 맞게 설정 -->
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rulesets>
+								<ruleset>/rulesets/java/basic.xml</ruleset>
+							</rulesets>
+							<linkXRef>false</linkXRef>
+							<targetJdk>11</targetJdk> <!-- 프로젝트 JDK 버전에 맞게 설정 -->
+							<outputDirectory>target/pmd</outputDirectory>
+							<outputFormat>xml</outputFormat>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
