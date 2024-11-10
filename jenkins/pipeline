@@ -22,7 +22,7 @@ node {
     }
 
     stage('Analysis') {
-        def pmd = scanForIssues tool: [$class: 'Pmd'], pattern: 'ksight-external/target/pmd.xml'
+        def pmd = scanForIssues tool: [$class: 'Pmd'], pattern: 'target/pmd.xml'
         publishIssues issues:[pmd]
     }
 
