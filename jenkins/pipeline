@@ -33,21 +33,19 @@ node {
 
     stage('Deploy') {
         sh """
-        if [ -d /data/K-SIGHT-DEV/deploy/external ]; then
-          rm -rf /data/K-SIGHT-DEV/deploy/external
+        if [ -d /appdata/web-auto-deploy/ ]; then
+          rm -rf /appdata/web-auto-deploy/
         fi
         """
-        sh "mkdir -m 777 -p /data/K-SIGHT-DEV/deploy/external"
-        sh "mkdir -m 777 -p /data/K-SIGHT-DEV/deploy/external/api"
+        sh "mkdir -m 777 -p /appdata/web-auto-deploy/"
+        sh "mkdir -m 777 -p /appdata/web-auto-deploy/back-end"
 
-        sh "cp ./ksight-external/target/${BUILD_FILE_NAME} /data/K-SIGHT-DEV/deploy/external/api"
-        sh "cp -r ./ksight-external/front-end /data/K-SIGHT-DEV/deploy/external"
-        sh "cp -r ./ksight-external/docker-dev/web /data/K-SIGHT-DEV/deploy/external"
+        sh "cp ./target/${BUILD_FILE_NAME} /appdata/web-auto-deploy/back-end"
+        sh "cp -r ./docker/front-end /appdata/web-auto-deploy"
+        sh "cp -r ./docker/nginx-lb /appdata/web-auto-deploy"
 
-        sh "mv /data/K-SIGHT-DEV/deploy/external/front-end /data/K-SIGHT-DEV/deploy/external/app"
-
-        sh "cp ./ksight-external/docker-dev/api/Dockerfile /data/K-SIGHT-DEV/deploy/external/api"
-        sh "cp ./ksight-external/docker-dev/app/Dockerfile /data/K-SIGHT-DEV/deploy/external/app"
+        sh "cp ./docker/back-end-was/Dockerfile /appdata/web-auto-deploy/back-end"
+        sh "cp ./docker/front-end-was/Dockerfile /appdata/web-auto-deploy/front-end"
     }
 
     def DOCKER_REGISTRY = '10.20.106.6:5000'
@@ -56,6 +54,14 @@ node {
     def API_CONTAINER_NAME = 'ksight-external-api-dev'
     def APP_CONTAINER_NAME = 'ksight-external-app-dev'
     def WEB_CONTAINER_NAME = 'ksight-external-web-dev'
+    stage('Docker Build/Run') {
+        cd /data/K-SIGHT-DEV/deploy/external/api
+        sudo docker build -t ${API_CONTAINER_NAME} .
+        cd /data/K-SIGHT-DEV/deploy/external/app
+        sudo docker build -t ${APP_CONTAINER_NAME} .
+        cd /data/K-SIGHT-DEV/deploy/external/web
+        sudo docker build -t ${WEB_CONTAINER_NAME} .
+    }
 
     stage('Docker Build/Push') {
         withCredentials([string(credentialsId: 'CPICI_SECRET', variable: 'CPICI_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET')]) {
