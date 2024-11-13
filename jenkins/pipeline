@@ -67,13 +67,12 @@ node {
         withCredentials([string(credentialsId: 'CPICI_SECRET', variable: 'CPICI_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET')]) {
             def remote = [:]
             remote.name = 'cpici'
-            remote.host = '10.20.106.6'
-            remote.port = 20022
+            remote.host = '192.168.50.2'
+            remote.port = 22
             remote.user = 'ncloud'
-            remote.password = CPICI_SECRET
+            remote.password = WSL_SECRET
             remote.allowAnyHosts = true
             sshCommand remote: remote, command: """
-            sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_GROUP}
             cd /data/K-SIGHT-DEV/deploy/external/api
             sudo docker build -t ${API_CONTAINER_NAME} .
             cd /data/K-SIGHT-DEV/deploy/external/app
