@@ -48,12 +48,11 @@ node {
         sh "cp ./docker/front-end-was/Dockerfile /appdata/web-auto-deploy/front-end"
     }
 
-    def DOCKER_REGISTRY = '10.20.106.6:5000'
-    def DOCKER_GROUP = '10.20.106.6:5001'
 
-    def API_CONTAINER_NAME = 'ksight-external-api-dev'
-    def APP_CONTAINER_NAME = 'ksight-external-app-dev'
-    def WEB_CONTAINER_NAME = 'ksight-external-web-dev'
+
+    def API_CONTAINER_NAME = 'back-end-was'
+    def APP_CONTAINER_NAME = 'front-end-was'
+    def WEB_CONTAINER_NAME = 'nginx-lb'
     stage('Docker Build/Run') {
         cd /data/K-SIGHT-DEV/deploy/external/api
         sudo docker build -t ${API_CONTAINER_NAME} .
@@ -61,31 +60,29 @@ node {
         sudo docker build -t ${APP_CONTAINER_NAME} .
         cd /data/K-SIGHT-DEV/deploy/external/web
         sudo docker build -t ${WEB_CONTAINER_NAME} .
+
     }
 
     stage('Docker Build/Push') {
-        withCredentials([string(credentialsId: 'CPICI_SECRET', variable: 'CPICI_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET')]) {
+        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET')]) {
             def remote = [:]
             remote.name = 'cpici'
             remote.host = '192.168.50.2'
             remote.port = 22
-            remote.user = 'ncloud'
-            remote.password = WSL_SECRET
+            remote.user = 'lth1178'
+            remote.password = ${WSL_SECRET}
             remote.allowAnyHosts = true
             sshCommand remote: remote, command: """
-            cd /data/K-SIGHT-DEV/deploy/external/api
+            cd /appdata/web-auto-deploy/back-end
             sudo docker build -t ${API_CONTAINER_NAME} .
-            cd /data/K-SIGHT-DEV/deploy/external/app
+            cd /appdata/web-auto-deploy/front-end
             sudo docker build -t ${APP_CONTAINER_NAME} .
-            cd /data/K-SIGHT-DEV/deploy/external/web
+            cd /appdata/web-auto-deploy/nginx-lb
             sudo docker build -t ${WEB_CONTAINER_NAME} .
             sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_REGISTRY}
-            sudo docker tag ${API_CONTAINER_NAME} ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${APP_CONTAINER_NAME} ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${WEB_CONTAINER_NAME} ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker push ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker push ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker push ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${APP_CONTAINER_NAME} {APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
