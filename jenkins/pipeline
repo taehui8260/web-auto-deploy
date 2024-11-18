@@ -48,23 +48,12 @@ node {
         sh "cp ./docker/front-end-was/Dockerfile /appdata/web-auto-deploy/front-end"
     }
 
-
-
     def API_CONTAINER_NAME = 'back-end-was'
     def APP_CONTAINER_NAME = 'front-end-was'
     def WEB_CONTAINER_NAME = 'nginx-lb'
-    stage('Docker Build/Run') {
-        cd /data/K-SIGHT-DEV/deploy/external/api
-        sudo docker build -t ${API_CONTAINER_NAME} .
-        cd /data/K-SIGHT-DEV/deploy/external/app
-        sudo docker build -t ${APP_CONTAINER_NAME} .
-        cd /data/K-SIGHT-DEV/deploy/external/web
-        sudo docker build -t ${WEB_CONTAINER_NAME} .
-
-    }
 
     stage('Docker Build/Push') {
-        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET')]) {
+        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER', variable: 'DOCKERUSER'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
             def remote = [:]
             remote.name = 'cpici'
             remote.host = '192.168.50.2'
@@ -79,10 +68,10 @@ node {
             sudo docker build -t ${APP_CONTAINER_NAME} .
             cd /appdata/web-auto-deploy/nginx-lb
             sudo docker build -t ${WEB_CONTAINER_NAME} .
-            sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_REGISTRY}
-            sudo docker tag ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${APP_CONTAINER_NAME} {APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker login -u ${DOCKERUSER} -p ${DOCKERUSER_SECRET}
+            sudo docker tag ${API_CONTAINER_NAME} {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${APP_CONTAINER_NAME} {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
+            sudo docker tag ${WEB_CONTAINER_NAME} {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
@@ -91,34 +80,32 @@ node {
     }
 
     stage('Docker Pull/Run') {
-        withCredentials([string(credentialsId: 'CDIWEB_SECRET', variable: 'CDIWEB_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET')]) {
-            def remote = [:]
-            remote.name = 'cpiewas1'
-            remote.host = '10.20.200.6'
-            remote.port = 20022
-            remote.user = 'ncloud'
-            remote.password = CDIWEB_SECRET
-            remote.allowAnyHosts = true
-            sshCommand remote: remote, command: """
-            sudo docker rmi \$(docker images -f "dangling=true" -q)
-            sudo docker login -u dockeruser -p ${DOCKERUSER_SECRET} ${DOCKER_REGISTRY}
-            sudo docker pull ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker pull ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker pull ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE} ${API_CONTAINER_NAME}:latest
-            sudo docker tag ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE} ${APP_CONTAINER_NAME}:latest
-            sudo docker tag ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE} ${WEB_CONTAINER_NAME}:latest
-            sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker rm --force ${API_CONTAINER_NAME}
-            sudo docker rm --force ${APP_CONTAINER_NAME}
-            sudo docker rm --force ${WEB_CONTAINER_NAME}
-            sudo docker run --rm -d -p 18081:8080 -v /data/K-SIGHT-DEV/files:/data/K-SIGHT/files -v /applog/K-SIGHT/external/api:/DATA/data-portal/logs -e TZ=Asia/Seoul -e SSO_ENGINE_IP=10.20.200.6 --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
-            sudo docker run --rm -d -p 14000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
-            sudo docker run --rm -d -p 18080:80 -p 18443:443 -v/data/K-SIGHT-DEV/web/external/nginx/html:/etc/nginx/html -v /applog/K-SIGHT/external/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
-            """, failOnError: true
+            withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER', variable: 'DOCKERUSER'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
+                remote.name = 'cpici'
+                remote.host = '192.168.50.2'
+                remote.port = 22
+                remote.user = 'lth1178'
+                remote.password = ${WSL_SECRET}
+                remote.allowAnyHosts = true
+                sshCommand remote: remote, command: """
+                sudo docker rmi \$(docker images -f "dangling=true" -q)
+                sudo docker login -u ${DOCKERUSER} -p ${DOCKERUSER_SECRET}
+                sudo docker pull ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+                sudo docker pull ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+                sudo docker pull ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+                sudo docker tag ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE} ${API_CONTAINER_NAME}:latest
+                sudo docker tag ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE} ${APP_CONTAINER_NAME}:latest
+                sudo docker tag ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE} ${WEB_CONTAINER_NAME}:latest
+                sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+                sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+                sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+                sudo docker rm --force ${API_CONTAINER_NAME}
+                sudo docker rm --force ${APP_CONTAINER_NAME}
+                sudo docker rm --force ${WEB_CONTAINER_NAME}
+                sudo docker run --rm -d -p 18081:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
+                sudo docker run --rm -d -p 14000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
+                sudo docker run --rm -d -p 18080:80 -p 18443:443 -v /applog/K-SIGHT/external/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
+                """, failOnError: true
+            }
         }
-
-    }
 }
