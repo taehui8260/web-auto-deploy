@@ -52,10 +52,10 @@ node {
     def APP_CONTAINER_NAME = 'front-end-was'
     def WEB_CONTAINER_NAME = 'nginx-lb'
 
-    stage('Docker Build/Push') {
+    stage('Docker Build/Push/Run') {
         withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER', variable: 'DOCKERUSER'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
             def remote = [:]
-            remote.name = 'cpici'
+            remote.name = 'wsl_host'
             remote.host = '192.168.50.2'
             remote.port = 22
             remote.user = 'lth1178'
@@ -75,37 +75,11 @@ node {
             sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+
+            sudo docker run --rm -d -p 18081:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
+            sudo docker run --rm -d -p 14000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
+            sudo docker run --rm -d -p 18080:80 -p 18443:443 -v /applog/web-auto-deploy/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
             """, failOnError: true
         }
     }
-
-    stage('Docker Pull/Run') {
-            withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER', variable: 'DOCKERUSER'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
-                remote.name = 'cpici'
-                remote.host = '192.168.50.2'
-                remote.port = 22
-                remote.user = 'lth1178'
-                remote.password = ${WSL_SECRET}
-                remote.allowAnyHosts = true
-                sshCommand remote: remote, command: """
-                sudo docker rmi \$(docker images -f "dangling=true" -q)
-                sudo docker login -u ${DOCKERUSER} -p ${DOCKERUSER_SECRET}
-                sudo docker pull ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-                sudo docker pull ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-                sudo docker pull ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
-                sudo docker tag ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE} ${API_CONTAINER_NAME}:latest
-                sudo docker tag ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE} ${APP_CONTAINER_NAME}:latest
-                sudo docker tag ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE} ${WEB_CONTAINER_NAME}:latest
-                sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-                sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-                sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
-                sudo docker rm --force ${API_CONTAINER_NAME}
-                sudo docker rm --force ${APP_CONTAINER_NAME}
-                sudo docker rm --force ${WEB_CONTAINER_NAME}
-                sudo docker run --rm -d -p 18081:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
-                sudo docker run --rm -d -p 14000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
-                sudo docker run --rm -d -p 18080:80 -p 18443:443 -v /applog/K-SIGHT/external/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
-                """, failOnError: true
-            }
-        }
 }
