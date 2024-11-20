@@ -1,4 +1,4 @@
-FROM 10.20.106.6:5001/openjdk:11-jdk
+FROM openjdk:11-jdk
 
 RUN mkdir -p /data/K-SIGHT/files
 RUN mkdir -p /DATA/data-portal/logs

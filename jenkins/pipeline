@@ -53,7 +53,7 @@ node {
     def WEB_CONTAINER_NAME = 'nginx-lb'
 
     stage('Docker Build/Push/Run') {
-        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER', variable: 'DOCKERUSER'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
+        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
             def remote = [:]
             remote.name = 'wsl_host'
             remote.host = '192.168.50.2'
@@ -68,7 +68,7 @@ node {
             sudo docker build -t ${APP_CONTAINER_NAME} .
             cd /appdata/web-auto-deploy/nginx-lb
             sudo docker build -t ${WEB_CONTAINER_NAME} .
-            sudo docker login -u ${DOCKERUSER} -p ${DOCKERUSER_SECRET}
+            sudo docker login -u taehui8260 -p ${DOCKERUSER_SECRET}
             sudo docker tag ${API_CONTAINER_NAME} {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker tag ${APP_CONTAINER_NAME} {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker tag ${WEB_CONTAINER_NAME} {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
@@ -76,9 +76,9 @@ node {
             sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
             sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
 
-            sudo docker run --rm -d -p 18081:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
-            sudo docker run --rm -d -p 14000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
-            sudo docker run --rm -d -p 18080:80 -p 18443:443 -v /applog/web-auto-deploy/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
+            sudo docker run --rm -d -p 8080:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
+            sudo docker run --rm -d -p 4000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
+            sudo docker run --rm -d -p 80:80 -p 18443:443 -v /applog/web-auto-deploy/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
             """, failOnError: true
         }
     }
