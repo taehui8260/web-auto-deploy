@@ -53,7 +53,7 @@ node {
     def WEB_CONTAINER_NAME = 'nginx-lb'
 
     stage('Docker Build/Push/Run') {
-        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]]) {
+        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]) {
             def remote = [:]
             remote.name = 'wsl_host'
             remote.host = '192.168.50.2'
