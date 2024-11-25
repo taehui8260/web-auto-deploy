@@ -21,11 +21,6 @@ node {
         sh "${MAVEN_HOME}/bin/mvn -f pom.xml clean package pmd:pmd pmd:cpd"
     }
 
-    stage('Analysis') {
-        def pmd = scanForIssues tool: [$class: 'Pmd'], pattern: 'target/pmd.xml'
-        publishIssues issues:[pmd]
-    }
-
     def pom = readMavenPom file: 'pom.xml'
     def ARTIFACT_ID = pom.artifactId
     def VERSION = pom.version
@@ -41,7 +36,7 @@ node {
         sh "mkdir -m 777 -p /appdata/web-auto-deploy/back-end"
 
         sh "cp ./target/${BUILD_FILE_NAME} /appdata/web-auto-deploy/back-end"
-        sh "cp -r ./docker/front-end /appdata/web-auto-deploy"
+        sh "cp -r ./docker/front-end-was /appdata/web-auto-deploy"
         sh "cp -r ./docker/nginx-lb /appdata/web-auto-deploy"
 
         sh "cp ./docker/back-end-was/Dockerfile /appdata/web-auto-deploy/back-end"
