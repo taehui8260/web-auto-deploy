@@ -54,7 +54,7 @@ node {
             remote.host = '192.168.50.2'
             remote.port = 22
             remote.user = 'lth1178'
-            remote.password = ${WSL_SECRET}
+            remote.password = WSL_SECRET // Groovy 변수로 사용
             remote.allowAnyHosts = true
             sshCommand remote: remote, command: """
             cd /appdata/web-auto-deploy/back-end
