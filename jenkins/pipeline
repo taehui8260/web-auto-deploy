@@ -28,19 +28,19 @@ node {
 
     stage('Deploy') {
         sh """
-        if [ -d /appdata/web-auto-deploy/ ]; then
-          rm -rf /appdata/web-auto-deploy/
+        if [ -d /appdata/jenkins/web-auto-deploy/deploy/ ]; then
+          rm -rf /appdata/jenkins/web-auto-deploy/deploy/
         fi
         """
-        sh "mkdir -m 777 -p /appdata/web-auto-deploy/"
-        sh "mkdir -m 777 -p /appdata/web-auto-deploy/back-end"
+        sh "mkdir -m 777 -p /appdata/jenkins/web-auto-deploy/deploy/"
+        sh "mkdir -m 777 -p /appdata/jenkins/web-auto-deploy/deploy/back-end"
 
-        sh "cp ./target/${BUILD_FILE_NAME} /appdata/web-auto-deploy/back-end"
-        sh "cp -r ./docker/front-end-was /appdata/web-auto-deploy"
-        sh "cp -r ./docker/nginx-lb /appdata/web-auto-deploy"
+        sh "cp ./target/${BUILD_FILE_NAME} /appdata/jenkins/web-auto-deploy/deploy/back-end"
+        sh "cp -r ./docker/front-end-was /appdata/jenkins/web-auto-deploy/deploy"
+        sh "cp -r ./docker/nginx-lb /appdata/jenkins/web-auto-deploy/deploy"
 
-        sh "cp ./docker/back-end-was/Dockerfile /appdata/web-auto-deploy/back-end"
-        sh "cp ./docker/front-end-was/Dockerfile /appdata/web-auto-deploy/front-end"
+        sh "cp ./docker/back-end-was/Dockerfile /appdata/jenkins/web-auto-deploy/deploy/back-end"
+        sh "cp ./docker/front-end-was/Dockerfile /appdata/jenkins/web-auto-deploy/deploy/front-end"
     }
 
     def API_CONTAINER_NAME = 'back-end-was'
@@ -57,23 +57,23 @@ node {
             remote.password = WSL_SECRET // Groovy 변수로 사용
             remote.allowAnyHosts = true
             sshCommand remote: remote, command: """
-            cd /appdata/web-auto-deploy/back-end
-            sudo docker build -t ${API_CONTAINER_NAME} .
-            cd /appdata/web-auto-deploy/front-end
-            sudo docker build -t ${APP_CONTAINER_NAME} .
-            cd /appdata/web-auto-deploy/nginx-lb
-            sudo docker build -t ${WEB_CONTAINER_NAME} .
-            sudo docker login -u taehui8260 -p ${DOCKERUSER_SECRET}
-            sudo docker tag ${API_CONTAINER_NAME} {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${APP_CONTAINER_NAME} {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker tag ${WEB_CONTAINER_NAME} {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-            sudo docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            cd /appdata/jenkins/web-auto-deploy/deploy/back-end
+            docker build -t ${API_CONTAINER_NAME} .
+            cd /appdata/jenkins/web-auto-deploy/deploy/front-end
+            docker build -t ${APP_CONTAINER_NAME} .
+            cd /appdata/jenkins/web-auto-deploy/deploy/nginx-lb
+            docker build -t ${WEB_CONTAINER_NAME} .
+            docker login -u taehui8260 -p ${DOCKERUSER_SECRET}
+            docker tag ${API_CONTAINER_NAME} {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            docker tag ${APP_CONTAINER_NAME} {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
+            docker tag ${WEB_CONTAINER_NAME} {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
 
-            sudo docker run --rm -d -p 8080:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
-            sudo docker run --rm -d -p 4000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
-            sudo docker run --rm -d -p 80:80 -p 18443:443 -v /applog/web-auto-deploy/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
+            docker run --rm -d -p 8080:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
+            docker run --rm -d -p 4000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
+            docker run --rm -d -p 80:80 -p 18443:443 -v /applog/jenkins/web-auto-deploy/web:/var/log/nginx -e TZ=Asia/Seoul --name ${WEB_CONTAINER_NAME} ${WEB_CONTAINER_NAME}
             """, failOnError: true
         }
     }
