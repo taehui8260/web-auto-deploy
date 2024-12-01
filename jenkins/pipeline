@@ -72,30 +72,30 @@ node {
     }
 
     stage('Docker Push') {
-            withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]) {
-                def remote = [:]
-                remote.name = 'wsl_host'
-                remote.host = '192.168.50.2'
-                remote.port = 22
-                remote.user = 'lth1178'
-                remote.password = WSL_SECRET // Groovy 변수로 사용
-                remote.allowAnyHosts = true
-                sshCommand remote: remote, command: """
+        withCredentials([string(credentialsId: 'WSL_SECRET', variable: 'WSL_SECRET'), string(credentialsId: 'DOCKERUSER_SECRET', variable: 'DOCKERUSER_SECRET'), string(credentialsId: 'DOCKER_REGISTRY', variable: 'DOCKER_REGISTRY')]) {
+            def remote = [:]
+            remote.name = 'wsl_host'
+            remote.host = '192.168.50.2'
+            remote.port = 22
+            remote.user = 'lth1178'
+            remote.password = WSL_SECRET // Groovy 변수로 사용
+            remote.allowAnyHosts = true
+            sshCommand remote: remote, command: """
 
-                docker login -u taehui8260 -p ${DOCKERUSER_SECRET}
-                docker tag ${API_CONTAINER_NAME} {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-                docker tag ${APP_CONTAINER_NAME} {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
-                docker tag ${WEB_CONTAINER_NAME} {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            docker login -u taehui8260 -p ${DOCKERUSER_SECRET}
+            docker tag ${API_CONTAINER_NAME} {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            docker tag ${APP_CONTAINER_NAME} {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
+            docker tag ${WEB_CONTAINER_NAME} {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
 
-                docker push {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-                docker push {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
-                docker push {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            docker push {DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            docker push {DOCKER_REGISTRY}/{APP_CONTAINER_NAME}:${CURRENT_DATE}
+            docker push {DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
 
-                docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
-                docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
-                docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
+            docker rmi ${DOCKER_REGISTRY}/${API_CONTAINER_NAME}:${CURRENT_DATE}
+            docker rmi ${DOCKER_REGISTRY}/${APP_CONTAINER_NAME}:${CURRENT_DATE}
+            docker rmi ${DOCKER_REGISTRY}/${WEB_CONTAINER_NAME}:${CURRENT_DATE}
 
-                """, failOnError: true
-            }
+            """, failOnError: true
         }
+    }
 }
