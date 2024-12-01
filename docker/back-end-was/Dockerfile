@@ -1,6 +1,6 @@
 FROM openjdk:11-jdk
 
-ADD bankend-*.jar /appdata/back-end.jar
+ADD backend-*.jar /appdata/back-end.jar
 
 WORKDIR /appdata
 
