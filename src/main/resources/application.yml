@@ -5,4 +5,4 @@ spring:
   application:
     name: web-auto-deploy
   profiles:
-    active: default
+    active: loc

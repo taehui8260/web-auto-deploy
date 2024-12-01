@@ -33,14 +33,14 @@ node {
         fi
         """
         sh "mkdir -m 777 -p /appdata/jenkins/web-auto-deploy/deploy/"
-        sh "mkdir -m 777 -p /appdata/jenkins/web-auto-deploy/deploy/back-end"
+        sh "mkdir -m 777 -p /appdata/jenkins/web-auto-deploy/deploy/back-end-was"
 
-        sh "cp ./target/${BUILD_FILE_NAME} /appdata/jenkins/web-auto-deploy/deploy/back-end"
-        sh "cp -r ./docker/front-end-was /appdata/jenkins/web-auto-deploy/deploy"
+        sh "cp ./target/${BUILD_FILE_NAME} /appdata/jenkins/web-auto-deploy/deploy/back-end-was"
+        sh "cp -r ./front-end /appdata/jenkins/web-auto-deploy/deploy/front-end-was"
         sh "cp -r ./docker/nginx-lb /appdata/jenkins/web-auto-deploy/deploy"
 
-        sh "cp ./docker/back-end-was/Dockerfile /appdata/jenkins/web-auto-deploy/deploy/back-end"
-        sh "cp ./docker/front-end-was/Dockerfile /appdata/jenkins/web-auto-deploy/deploy/front-end"
+        sh "cp ./docker/back-end-was/Dockerfile /appdata/jenkins/web-auto-deploy/deploy/back-end-was"
+        sh "cp ./docker/front-end-was/Dockerfile /appdata/jenkins/web-auto-deploy/deploy/front-end-was"
     }
 
     def API_CONTAINER_NAME = 'back-end-was'

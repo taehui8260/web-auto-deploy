@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:mysql://prd-db-server:3306/prod_db
+    username: prod_user
+    password: prod_pass
