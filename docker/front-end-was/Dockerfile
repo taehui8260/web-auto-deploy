@@ -3,11 +3,17 @@ FROM node:18-alpine
 RUN mkdir -p /usr/local/nuxt-app
 WORKDIR /usr/local/nuxt-app
 
-COPY ./front-end/package.json ./front-end/package-lock.json ./
-COPY ./front-end/.npmrc ./
+# COPY ./front-end/package.json ./front-end/package-lock.json ./
+# COPY ./front-end/.npmrc ./
+# RUN npm install
+
+# COPY ./front-end/. .
+
+COPY ./package.json ./package-lock.json ./
+COPY ./.npmrc ./
 RUN npm install
 
-COPY ./front-end/. .
+COPY ./. .
 
 RUN npm run build
 
