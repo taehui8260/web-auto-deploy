@@ -10,7 +10,7 @@ WORKDIR /usr/local/nuxt-app
 # COPY ./front-end/. .
 
 COPY ./package.json ./package-lock.json ./
-COPY ./.npmrc ./
+#COPY ./.npmrc ./
 RUN npm install
 
 COPY ./. .

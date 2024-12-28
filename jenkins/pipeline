@@ -57,12 +57,17 @@ node {
             remote.password = WSL_SECRET // Groovy 변수로 사용
             remote.allowAnyHosts = true
             sshCommand remote: remote, command: """
+
             cd /appdata/jenkins/web-auto-deploy/deploy/back-end-was
             docker build -t ${API_CONTAINER_NAME} .
             cd /appdata/jenkins/web-auto-deploy/deploy/front-end-was
             docker build -t ${APP_CONTAINER_NAME} .
             cd /appdata/jenkins/web-auto-deploy/deploy/nginx-lb
             docker build -t ${WEB_CONTAINER_NAME} .
+
+            docker stop ${API_CONTAINER_NAME}
+            docker stop ${APP_CONTAINER_NAME}
+            docker stop ${WEB_CONTAINER_NAME}
 
             docker run --rm -d -p 8080:8080 -e TZ=Asia/Seoul --name ${API_CONTAINER_NAME} ${API_CONTAINER_NAME}
             docker run --rm -d -p 4000:4000 -e TZ=Asia/Seoul --name ${APP_CONTAINER_NAME} ${APP_CONTAINER_NAME}
